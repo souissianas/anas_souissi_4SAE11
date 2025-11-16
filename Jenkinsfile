@@ -10,7 +10,7 @@ pipeline {
 
         stage('GIT') {
             steps {
-                git branch: 'master',
+                git branch: 'main',
                     url: 'https://github.com/souissianas/anas_souissi_4SAE11.git'
             }
         }
