@@ -1,20 +1,23 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JAVA_HOME'
+        maven 'M2_HOME'
+    }
+
     stages {
-        stage('Build') {
+
+        stage('GIT') {
             steps {
-                echo 'Étape de Build...'
+                git branch: 'master',
+                    url: 'https://github.com/souissianas/anas_souissi_4SAE11.git'
             }
         }
-        stage('Test') {
+
+        stage('Compile Stage') {
             steps {
-                echo 'Étape de Test...'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'Étape de Déploiement...'
+                sh 'mvn clean compile'
             }
         }
     }
