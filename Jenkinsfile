@@ -20,24 +20,6 @@ pipeline {
             }
         }
 
-        stage('Fix Dockerfile') {
-            steps {
-                sh '''
-                    # Corriger le Dockerfile
-                    cat > Dockerfile << 'EOF'
-FROM openjdk:17.0.1-jdk-slim
-WORKDIR /app
-COPY target/*.jar app.jar
-EXPOSE 8089
-ENTRYPOINT ["java", "-jar", "app.jar"]
-EOF
-                    # Vérifier le contenu
-                    echo "=== Dockerfile corrigé ==="
-                    cat Dockerfile
-                '''
-            }
-        }
-
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
@@ -46,14 +28,10 @@ EOF
 
         stage('Docker Build') {
             steps {
-                retry(2) {
-                    timeout(time: 15, unit: 'MINUTES') {
-                        sh """
-                            docker build -t ${IMAGE_NAME}:${VERSION} .
-                            docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
-                        """
-                    }
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${VERSION} .
+                    docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
+                """
             }
         }
 
@@ -72,8 +50,8 @@ EOF
     post {
         success {
             echo "🎉 SUCCÈS TOTAL !"
-            echo "✅ Image Docker: ${IMAGE_NAME}:${VERSION}"
-            echo "✅ Disponible sur Docker Hub !"
+            echo "✅ Image Docker construite: ${IMAGE_NAME}:${VERSION}"
+            echo "✅ Image poussée vers Docker Hub !"
         }
         failure {
             echo "❌ Échec du pipeline."
