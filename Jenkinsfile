@@ -20,6 +20,24 @@ pipeline {
             }
         }
 
+        stage('Fix Dockerfile') {
+            steps {
+                sh '''
+                    # Corriger le Dockerfile
+                    cat > Dockerfile << 'EOF'
+FROM openjdk:17.0.1-jdk-slim
+WORKDIR /app
+COPY target/*.jar app.jar
+EXPOSE 8089
+ENTRYPOINT ["java", "-jar", "app.jar"]
+EOF
+                    # Vérifier le contenu
+                    echo "=== Dockerfile corrigé ==="
+                    cat Dockerfile
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
@@ -28,26 +46,24 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:${VERSION} .
-                    docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
-                """
-            }
-        }
-
-        stage('Docker Login') {
-            steps {
-                sh """
-                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-                """
+                retry(2) {
+                    timeout(time: 15, unit: 'MINUTES') {
+                        sh """
+                            docker build -t ${IMAGE_NAME}:${VERSION} .
+                            docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
+                        """
+                    }
+                }
             }
         }
 
         stage('Docker Push') {
             steps {
                 sh """
+                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
                     docker push ${IMAGE_NAME}:${VERSION}
                     docker push ${IMAGE_NAME}:latest
+                    docker logout
                 """
             }
         }
@@ -55,11 +71,12 @@ pipeline {
 
     post {
         success {
-            echo "🎉 Pipeline successful — Image pushed to Docker Hub!"
-            echo "📦 Image: ${IMAGE_NAME}:${VERSION}"
+            echo "🎉 SUCCÈS TOTAL !"
+            echo "✅ Image Docker: ${IMAGE_NAME}:${VERSION}"
+            echo "✅ Disponible sur Docker Hub !"
         }
         failure {
-            echo "❌ Pipeline failed."
+            echo "❌ Échec du pipeline."
         }
     }
 }
