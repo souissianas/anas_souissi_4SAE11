@@ -7,13 +7,12 @@ pipeline {
     }
 
     environment {
-        DOCKER_CREDENTIALS = credentials('dockerhub-creds')  // your Docker Hub credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         IMAGE_NAME = "anassouissi/student-management"
-        IMAGE_TAG = "latest"
+        VERSION = "${env.BUILD_ID}"
     }
 
     stages {
-
         stage('GIT Checkout') {
             steps {
                 git branch: 'main',
@@ -30,7 +29,8 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh """
-                   sudo docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker build -t ${IMAGE_NAME}:${VERSION} .
+                    docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
                 """
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 sh """
-                    echo "${DOCKER_CREDENTIALS_PSW}" | sudo docker login -u "${DOCKER_CREDENTIALS_USR}" --password-stdin
+                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
                 """
             }
         }
@@ -46,7 +46,8 @@ pipeline {
         stage('Docker Push') {
             steps {
                 sh """
-                    sudo docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${IMAGE_NAME}:${VERSION}
+                    docker push ${IMAGE_NAME}:latest
                 """
             }
         }
@@ -55,6 +56,7 @@ pipeline {
     post {
         success {
             echo "🎉 Pipeline successful — Image pushed to Docker Hub!"
+            echo "📦 Image: ${IMAGE_NAME}:${VERSION}"
         }
         failure {
             echo "❌ Pipeline failed."
