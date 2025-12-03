@@ -6,11 +6,16 @@ pipeline {
     }
     
     stages {
+        stage('Make mvnw executable') {
+            steps {
+                sh 'chmod +x mvnw'
+            }
+        }
+        
         stage('Scan') {
             steps {
                 withSonarQubeEnv(installationName: 'sq1') {
-                    // Utilisez mvnw.cmd pour Windows
-                    bat 'mvnw.cmd clean org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
+                    sh './mvnw clean org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
                 }
             }
         }
