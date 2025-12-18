@@ -7,6 +7,7 @@ pipeline {
     }
 
     environment {
+        // Assure-toi que cet ID 'docker-hub-credentials' existe bien dans Jenkins
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         IMAGE_NAME = "anassouissi/student-management"
         VERSION = "${env.BUILD_ID}"
@@ -45,16 +46,22 @@ pipeline {
                 """
             }
         }
-    }
-     stage('Deploy to Kubernetes') {
+
+        // --- CE STAGE EST MAINTENANT CORRECTEMENT PLACÉ DANS LE BLOC STAGES ---
+        stage('Deploy to Kubernetes') {
             steps {
                 echo '🚀 Déploiement sur K8s (Namespace: devops)...'
+                // Création namespace + Déploiement
                 sh 'kubectl create namespace devops --dry-run=client -o yaml | kubectl apply -f -'
                 sh 'kubectl apply -f k8s/ -n devops'
+                
+                // Redémarrage pour prendre la nouvelle image
                 sh 'kubectl rollout restart deployment/spring-deployment -n devops' 
+                
                 echo "✅ Ordre de déploiement envoyé avec succès !"
             }
         }
+    } // <--- L'ACCOLADE FERMANTE EST ICI MAINTENANT (Après tous les stages)
 
     post {
         success {
