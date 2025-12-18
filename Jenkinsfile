@@ -46,6 +46,15 @@ pipeline {
             }
         }
     }
+     stage('Deploy to Kubernetes') {
+            steps {
+                echo '🚀 Déploiement sur K8s (Namespace: devops)...'
+                sh 'kubectl create namespace devops --dry-run=client -o yaml | kubectl apply -f -'
+                sh 'kubectl apply -f k8s/ -n devops'
+                sh 'kubectl rollout restart deployment/spring-deployment -n devops' 
+                echo "✅ Ordre de déploiement envoyé avec succès !"
+            }
+        }
 
     post {
         success {
