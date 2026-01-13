@@ -19,7 +19,7 @@ pipeline {
             }
         }
         
-        stage('MVN SonarQube') {
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv(installationName: 'sq1') {
                     // Version simple sans tests
